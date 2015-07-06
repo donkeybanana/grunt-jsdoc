@@ -1,6 +1,7 @@
 module.exports = function(grunt) {
     'use strict';
 
+    var path = require('path');
 
     require('load-grunt-tasks')(grunt);
 
@@ -23,6 +24,24 @@ module.exports = function(grunt) {
                     private : false
                 }
             },
+            dynamic: {
+                files: [{
+                    expand: true,
+                    src: [
+                        'tasks/lib/*.js',
+                        'tasks/*.js'
+                    ],
+                    dest: 'doc/dynamic',
+                    rename: function(dest, src){
+                        var parts = src.split('/');
+                            parts.pop();
+                            parts.shift();
+                            parts.unshift(dest);
+
+                        return path.join.apply(null, parts);
+                    }
+                }]
+            },
             spacepack: {
                 src: ['tasks/**/*.js'],
                 options: {
@@ -43,6 +62,7 @@ module.exports = function(grunt) {
             unit: ['test/jsdoc-plugin_test.js'],
             basic: ['test/jsdoc-basic_test.js'],
             alternate: ['test/jsdoc-alternate_test.js'],
+            dynamic: ['test/jsdoc-dynamic_test.js'],
             docstrap: ['test/jsdoc-docstrap_test.js'],
             spacepack: ['test/jsdoc-spacepack_test.js']
         },
@@ -60,12 +80,13 @@ module.exports = function(grunt) {
 
 
     //testing tasks
-    grunt.registerTask('default', 'Default tas will lint and test', ['jshint', 'test']);
+    grunt.registerTask('default', 'Default task will lint and test', ['jshint', 'test']);
     grunt.registerTask('test-basic', 'Test basic jsdoc', ['jsdoc:basic', 'nodeunit:basic']);
-    grunt.registerTask('test-basic', 'Test jsdoc with alternate options', ['jsdoc:alternate', 'nodeunit:alternate']);
+    grunt.registerTask('test-alternate', 'Test jsdoc with alternate options', ['jsdoc:alternate', 'nodeunit:alternate']);
+    grunt.registerTask('test-dynamic', 'Test jsdoc with dynamic options', ['jsdoc:dynamic', 'nodeunit:dynamic']);
     grunt.registerTask('test-docstrap', 'Test jsdoc with a template', ['jsdoc:docstrap', 'nodeunit:docstrap']);
     grunt.registerTask('test-spacepack', 'Test jsdoc with a package and spaces in the paths', ['jsdoc:spacepack', 'nodeunit:spacepack']);
-    grunt.registerTask('test', 'Full test suite', ['clean', 'nodeunit:unit', 'test-basic', 'test-docstrap', 'test-spacepack']);
+    grunt.registerTask('test', 'Full test suite', ['clean', 'nodeunit:unit', 'test-basic', 'test-alternate', 'test-dynamic', 'test-docstrap', 'test-spacepack']);
 
 };
 
