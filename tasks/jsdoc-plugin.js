@@ -31,8 +31,16 @@ module.exports = function jsDocTask(grunt) {
     grunt.registerMultiTask('jsdoc', 'Generates source documentation using jsdoc', function registerJsdocTask() {
 
         var jsdoc;
+        var child;
+        var children;
         var params = {};
         var done = this.async();
+        var next = function() {
+            children--;
+            if (children === 0) {
+                done();
+            }
+        };
         var options = this.options({
             'private': true,
             'ignoreWarnings': false,
@@ -40,13 +48,7 @@ module.exports = function jsDocTask(grunt) {
         });
 
 
-        var sources = this.filesSrc;
         var jsdocPath = this.data.jsdoc;
-
-        if (!options.destination) {
-            // Support for old syntax where destination was provided through 'dest' key
-            options.destination = this.files[0].dest || 'doc';
-        }
 
         //legacy configs
         if (options.config) {
@@ -80,7 +82,7 @@ module.exports = function jsDocTask(grunt) {
         grunt.log.debug("Using jsdoc from : " + jsdoc);
 
         //check if there is sources to generate the doc for
-        if (sources.length === 0 && !params.configure) {
+        if (this.files.length === 0 && !params.configure) {
             grunt.log.error('No source files defined');
             grunt.fail.warn('Wrong configuration', errorCode.generic);
         }
@@ -91,31 +93,40 @@ module.exports = function jsDocTask(grunt) {
             grunt.fail.warn('Wrong configuration', errorCode.generic);
         }
 
-        if (!grunt.file.exists(params.destination)) {
-            grunt.file.mkdir(options.destination);
-            grunt.log.debug('create destination : ' + options.destination);
-            if (!grunt.file.exists(params.destination)) {
-                grunt.log.error('unable to create documentation folder : ' + params.destination);
-                grunt.fail.warn('Wrong configuration', errorCode.generic);
+        // Count child processes to be run
+        children = this.files.length;
+        // Loop over targets
+        this.files.forEach(function(files){
+            // Ensure destination exists
+            if (!grunt.file.exists(files.dest)) {
+                grunt.file.mkdir(files.dest);
+                grunt.log.debug('create destination : ' + files.dest);
+                if (!grunt.file.exists(files.dest)) {
+                    grunt.log.error('unable to create documentation folder : ' + files.dest);
+                    grunt.fail.warn('Wrong configuration', errorCode.generic);
+                }
             }
-        }
 
-        //execution of the jsdoc command
-        var child = exec.buildSpawned(grunt, jsdoc, sources, params);
+            params.destination = files.dest;
 
-        child.stdout.on('data', grunt.log.debug);
-        child.stderr.on('data', function(data) {
-            if (!options.ignoreWarnings) {
-                grunt.log.error(data);
-            }
-        });
-        child.on('exit', function(code) {
-            if (code === 0) {
-                grunt.log.write('Documentation generated to ' + path.resolve(options.destination));
-                done(true);
-            } else {
-                grunt.fail.warn('jsdoc terminated with a non-zero exit code', errorCode.task);
-            }
+            //execution of the jsdoc command
+            child = exec.buildSpawned(grunt, jsdoc, files.src, params);
+
+            child.stdout.on('data', grunt.log.debug);
+            child.stderr.on('data', function(data) {
+                if (!options.ignoreWarnings) {
+                    grunt.log.error(data);
+                }
+            });
+            child.on('exit', function(code) {
+                if (code === 0) {
+                    grunt.log.writeln('Documentation generated to ' + path.resolve(files.dest));
+                } else {
+                    grunt.fail.warn('jsdoc terminated with a non-zero exit code', errorCode.task);
+                }
+
+                next();
+            });
         });
     });
 };
