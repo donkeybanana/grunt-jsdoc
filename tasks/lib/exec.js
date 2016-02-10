@@ -20,7 +20,7 @@ module.exports = {
 
         var flag;
 		var cmd = (isWin) ? 'cmd' : script;
-		var args = (isWin) ? ['/c', script] : [];
+		var args = (isWin) ? ['/c', script.slice(-2) === 'js' ? 'node ' + script : script] : [];
 
 
          // handle paths that contain spaces
@@ -67,7 +67,8 @@ module.exports = {
 		//check first the base path into the cwd
 		paths = [
             __dirname + '/../../node_modules/.bin/jsdoc',
-            __dirname + '/../../node_modules/jsdoc/jsdoc.js'
+            __dirname + '/../../node_modules/jsdoc/jsdoc.js',
+            __dirname + '/../../../jsdoc/jsdoc.js'
         ];
 
         //fall back on global if not found at the usual location

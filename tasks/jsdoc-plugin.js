@@ -91,7 +91,7 @@ module.exports = function jsDocTask(grunt) {
             grunt.fail.warn('Wrong configuration', errorCode.generic);
         }
 
-        if (!grunt.file.exists(params.destination)) {
+        if (!grunt.file.exists(params.destination) && !params.configure) {
             grunt.file.mkdir(options.destination);
             grunt.log.debug('create destination : ' + options.destination);
             if (!grunt.file.exists(params.destination)) {
@@ -115,6 +115,7 @@ module.exports = function jsDocTask(grunt) {
                 done(true);
             } else {
                 grunt.fail.warn('jsdoc terminated with a non-zero exit code', errorCode.task);
+                done();
             }
         });
     });
